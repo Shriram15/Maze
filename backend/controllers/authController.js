@@ -1,6 +1,7 @@
 import Athlete from "../models/Athlete.js";
+import jwt from "jsonwebtoken";
 
-export const validateToken = async (req, res) => {
+export const loginAthlete = async (req, res) => {
   try {
     const { token } = req.body;
 
@@ -8,15 +9,22 @@ export const validateToken = async (req, res) => {
 
     if (!athlete) {
       return res.status(404).json({
-        valid: false,
+        success: false,
         message: "Invalid token"
       });
     }
 
+    const jwtToken = jwt.sign(
+      { id: athlete._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "6h" }
+    );
+
     res.json({
-      valid: true,
+      success: true,
       name: athlete.name,
-      status: athlete.status
+      status: athlete.status,
+      token: jwtToken
     });
 
   } catch (error) {
@@ -25,9 +33,7 @@ export const validateToken = async (req, res) => {
 };
 export const getAthleteStatus = async (req, res) => {
   try {
-    const { token } = req.query;
-
-    const athlete = await Athlete.findOne({ token });
+    const athlete = await Athlete.findById(req.user.id);
 
     if (!athlete) {
       return res.status(404).json({ message: "Athlete not found" });
@@ -36,8 +42,6 @@ export const getAthleteStatus = async (req, res) => {
     res.json({
       name: athlete.name,
       status: athlete.status,
-      startTime: athlete.startTime,
-      finishTime: athlete.finishTime,
       checkpointsCompleted: athlete.checkpoints.length,
       totalTime: athlete.totalTime
     });

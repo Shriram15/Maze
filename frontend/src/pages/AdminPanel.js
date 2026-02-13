@@ -46,6 +46,32 @@ const AdminPanel = () => {
         <div style={styles.container}>
             <h1 style={styles.title}>🏁 Maze Admin Dashboard</h1>
 
+            <div className="flex justify-around bg-white p-6 rounded-xl shadow mb-8">
+                <div>
+                    <h3 className="text-xl font-bold">Total Athletes</h3>
+                    <p className="text-2xl">
+                        {dashboard.running.length +
+                            dashboard.finished.length +
+                            dashboard.notStarted.length}
+                    </p>
+                </div>
+
+                <div>
+                    <h3 className="text-xl font-bold">Running</h3>
+                    <p className="text-2xl text-blue-600">
+                        {dashboard.running.length}
+                    </p>
+                </div>
+
+                <div>
+                    <h3 className="text-xl font-bold">Finished</h3>
+                    <p className="text-2xl text-green-600">
+                        {dashboard.finished.length}
+                    </p>
+                </div>
+            </div>
+
+
             {/* Create */}
             <div style={styles.createBox}>
                 <input
@@ -57,7 +83,26 @@ const AdminPanel = () => {
                 <button style={styles.createBtn} onClick={createAthlete}>
                     Create
                 </button>
+                <button
+                    onClick={async () => {
+                        if (window.confirm("Reset only running athletes?")) {
+                            await API.post("/admin/reset-running");
+                        }
+                    }}
+                    style={{
+                        marginLeft: "10px",
+                        padding: "8px 16px",
+                        background: "orange",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer"
+                    }}
+                >
+                    Reset Running
+                </button>
             </div>
+
 
             {/* Running */}
             <Section title="🟢 Running">
@@ -93,10 +138,33 @@ const AdminPanel = () => {
                                 Total: {Math.floor(a.totalTime / 1000)} seconds
                             </div>
                         </div>
-                        <DeleteBtn onClick={() => deleteAthlete(a.id)} />
+
+                        <div>
+                            <button
+                                onClick={async () => {
+                                    if (window.confirm("Allow retake for this athlete?")) {
+                                        await API.post(`/admin/retake/${a.id}`);
+                                    }
+                                }}
+                                style={{
+                                    background: "orange",
+                                    border: "none",
+                                    padding: "6px 12px",
+                                    color: "white",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    marginRight: "8px"
+                                }}
+                            >
+                                Retake
+                            </button>
+
+                            <DeleteBtn onClick={() => deleteAthlete(a.id)} />
+                        </div>
                     </Card>
                 ))}
             </Section>
+
         </div>
     );
 };

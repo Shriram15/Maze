@@ -96,19 +96,79 @@ export const getLiveDashboard = async (req, res) => {
 export const deleteAthlete = async (req, res) => {
   try {
     const { id } = req.params;
+
     await Athlete.deleteOne({ _id: id });
 
-
-    // 🔥 Generate fresh dashboard data
     const updatedData = await generateLiveData();
-
-    // 🔥 Emit to all admin dashboards
     req.io.emit("adminLiveUpdate", updatedData);
+
+    // 🔥 Update leaderboard properly
+    const finishedAthletes = await Athlete.find({
+      status: "finished"
+    }).sort({ totalTime: 1 });
+
+    const leaderboard = finishedAthletes.map((a, index) => ({
+      rank: index + 1,
+      name: a.name,
+      totalTime: `${Math.floor(a.totalTime / 1000)}s`
+    }));
+
+    req.io.emit("leaderboardLiveUpdate", leaderboard);
 
     res.json({ message: "Athlete deleted" });
 
   } catch (error) {
-    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const retakeAthlete = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const athlete = await Athlete.findById(id);
+
+    if (!athlete) {
+      return res.status(404).json({ message: "Athlete not found" });
+    }
+
+    athlete.status = "not_started";
+    athlete.checkpoints = [];
+    athlete.startTime = null;
+    athlete.finishTime = null;
+    athlete.totalTime = null;
+
+    await athlete.save();
+
+    const updatedData = await generateLiveData();
+    req.io.emit("adminLiveUpdate", updatedData);
+
+    res.json({ message: "Athlete ready for retake" });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const resetRunningAthletes = async (req, res) => {
+  try {
+    await Athlete.updateMany(
+      { status: "running" },   // only running athletes
+      {
+        status: "not_started",
+        checkpoints: [],
+        startTime: null,
+        finishTime: null,
+        totalTime: null
+      }
+    );
+
+    const updatedData = await generateLiveData();
+    req.io.emit("adminLiveUpdate", updatedData);
+
+    res.json({ message: "Running athletes reset" });
+
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };

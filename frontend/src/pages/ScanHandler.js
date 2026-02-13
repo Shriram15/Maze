@@ -5,15 +5,15 @@ import API from "../api";
 const ScanHandler = () => {
   const { checkpointId } = useParams();
   const [message, setMessage] = useState("Processing...");
-  const hasScanned = useRef(false); // 👈 prevents double execution
+  const hasScanned = useRef(false);
 
   useEffect(() => {
-    if (hasScanned.current) return; // 👈 stop second execution
+    if (hasScanned.current) return;
     hasScanned.current = true;
 
-    const token = localStorage.getItem("mazeToken");
+    const jwtToken = localStorage.getItem("token");
 
-    if (!token) {
+    if (!jwtToken) {
       setMessage("Please login first.");
       return;
     }
@@ -21,11 +21,11 @@ const ScanHandler = () => {
     const sendScan = async () => {
       try {
         const res = await API.post("/scan", {
-          token,
           checkpointId: Number(checkpointId)
         });
 
         setMessage(res.data.message);
+
       } catch (error) {
         setMessage(
           error.response?.data?.message || "Scan failed"

@@ -20,12 +20,24 @@ const athleteSchema = new mongoose.Schema({
     }
   ],
 
-  totalTime: Number, // milliseconds
+  attempts: [
+    {
+      totalTime: Number,
+      date: {
+        type: Date,
+        default: Date.now
+      }
+    }
+  ],
+
+  totalTime: Number,
+
   status: {
     type: String,
     enum: ["not_started", "running", "finished"],
     default: "not_started"
   }
+
 }, { timestamps: true });
 
 export default mongoose.model("Athlete", athleteSchema);
